@@ -1,6 +1,6 @@
 # deadinput
 
-find the input positions that no output character reads, and take them out of the interface. The program is rewritten to read the smaller input, with its positions renumbered, and gives the same output as before on every input.
+find the input positions that no output character reads, and take them out of the interface. The program is rewritten to read the smaller input, with its positions renumbered, and gives the same output as before on every input. Callers must then pass the smaller input (shrink_input/3 makes it from the full one).
 
 ## Use
 
@@ -9,16 +9,18 @@ find the input positions that no output character reads, and take them out of th
 ?- dead([in(0), plus(0, 2)], 4, D).                  % D = [1, 3]
 ?- simplify([in(0), plus(0, 2)], 4, S, Keep).         % S = [in(0), plus(0, 1)], Keep = [0, 2]
 ?- shrink_input([0, 2], [7, 8, 9, 5], In).            % In = [7, 9]
+?- simplify([in(5)], 4, S, Keep).                    % error: position_out_of_range(5, 4)
 ```
 
 ## Proofs
 
-`proofs/theorems.pl` proves 4 theorems by exhaustion: each one is checked for every case in a finite domain that covers every branch of the definitions. every program of 1 or 2 characters over inputs of length 3 from a pool; every input over 0..3.
+`proofs/theorems.pl` proves 5 theorems by exhaustion: each one is checked for every case in a finite domain that covers every branch of the definitions. every program of 1 or 2 characters over inputs of length 3 from a pool; every input over 0..3.
 
 1. The simplified program on the smaller input gives the same output as the original on the full input.
 2. A dead position really is dead: changing it never changes the output.
 3. Live and dead positions split the input exactly.
 4. Simplifying again changes nothing: the simplified program has no dead inputs.
+5. A formula that reads past the end of the input is reported (error(position_out_of_range(P, N))), never kept as live.
 
 ```sh
 swipl -g main -t halt proofs/theorems.pl

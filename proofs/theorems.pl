@@ -24,3 +24,7 @@ theorem(live_and_dead_partition) :- forall(prog(Fs), ( live(Fs, L), dead(Fs, 3, 
 
 % 4. Simplifying again changes nothing: the simplified program has no dead inputs.
 theorem(simplify_is_idempotent) :- forall(prog(Fs), ( simplify(Fs, 3, S, K), length(K, N), simplify(S, N, S2, K2), S2 == S, dead(S, N, []), ( N =:= 0 -> K2 == [] ; Top is N - 1, numlist(0, Top, K2) ) )).
+
+% 5. A formula that reads past the end of the input is reported, never kept as live.
+theorem(out_of_range_is_reported) :- forall(( prog(Fs), member(F, [in(3), shift(4, 1), plus(0, 3)]) ), ( append(Fs, [F], G),
+    catch(( simplify(G, 3, _, _), R = kept ), error(position_out_of_range(P, 3), _), R = reported(P)), R = reported(P), P >= 3 )).

@@ -4,6 +4,7 @@
 %?- dead([in(0), plus(0, 2)], 4, D).                  % D = [1, 3]
 %?- simplify([in(0), plus(0, 2)], 4, S, Keep).         % S = [in(0), plus(0, 1)], Keep = [0, 2]
 %?- shrink_input([0, 2], [7, 8, 9, 5], In).            % In = [7, 9]
+%?- simplify([in(5)], 4, S, Keep).                    % error: position_out_of_range(5, 4)
 :- module(deadinput, [eval_char/3, run/3, dep/2, live/2, dead/3, simplify/4, shrink_input/3]).
 :- use_module(library(lists)).
 :- use_module(library(apply)).
@@ -23,7 +24,10 @@ live(Fs, L) :- maplist(dep, Fs, Ds), append(Ds, L0), sort(L0, L).
 dead(Fs, N, D) :- live(Fs, L), ( N =:= 0 -> All = [] ; Top is N - 1, numlist(0, Top, All) ), subtract(All, L, D).
 
 % simplify(+Formulas, +N, -Simplified, -Keep): Keep are the live positions; formulas renumbered to index into them.
-simplify(Fs, _, S, Keep) :- live(Fs, Keep), maplist([F, G]>>renumber(F, Keep, G), Fs, S0), S = S0.
+% A formula that reads a position at or past N cannot run, so it is reported, not kept as live:
+% error(position_out_of_range(P, N)) is thrown for the first such position P.
+simplify(Fs, N, S, Keep) :- live(Fs, Keep), ( member(P, Keep), P >= N -> throw(error(position_out_of_range(P, N), simplify/4)) ; true ),
+    maplist([F, G]>>renumber(F, Keep, G), Fs, S0), S = S0.
 renumber(in(I), K, in(J)) :- nth0(J, K, I), !.
 renumber(shift(I, D), K, shift(J, D)) :- nth0(J, K, I), !.
 renumber(plus(I, I2), K, plus(J, J2)) :- nth0(J, K, I), !, nth0(J2, K, I2), !.
